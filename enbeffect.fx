@@ -265,20 +265,16 @@ VS_OUTPUT_POST2 VS_Draw2(VS_INPUT_POST IN)
 	tx = lerp(tx, 0.001, t5);
 
 	//			no,extr,cle,clrng,cld,over,smog,fogg,rain,thun,bliz,neut,snow,snowl,xms,hallo
-	const float w[16] = { 0.1,1.0,0.6,0.6,0.5,0.2,0.5,0.3,0.3,0.1,0.1,0.8,0.1,0.2,0.1,0.4 };
-	tx *= lerp(w[(int)qWeather.x], w[(int)qWeather.y], qWeather.z);
-
-	float night_cloud_factor = 1.0;
+	float w[16] = { 0.1,1.0,0.6,0.6,0.5,0.2,0.5,0.3,0.3,0.1,0.1,0.5,0.1,0.2,0.1,0.4 };
 	if (t > 21.5 || t < 4.9) {
-		if (qWeather.x == 4.0 || qWeather.x == 8.0 || qWeather.x == 9.0 || qWeather.x == 11.0) {
-			night_cloud_factor = 2.0;
-		}
-		if (qWeather.x == 1.0 || qWeather.x == 2.0 || qWeather.x == 3.0) {
-			tx = 0.0;
-		}
+		w[1] = 0.0; // extrasunny
+		w[2] = 0.0; // clear
+		w[3] = 0.0; // clearing
+		w[4] = 2.0; // clouds
+		w[8] = 2.0; // rain
+		w[9] = 2.0; // thunder
 	}
-	tx *= night_cloud_factor;
-
+	tx *= lerp(w[(int)qWeather.x], w[(int)qWeather.y], qWeather.z);
 	OUT.txcoord1.w = tx;
 
 	float2 tvec = IN.txcoord.xy * float2(2.0, -2.0) + float2(-1.0, 1.0);
