@@ -382,7 +382,7 @@ if_nz r3.w
       mul r7.x, r7.x, r7.x
       mul r7.x, r7.x, r8.y
       mul r7.x, r8.x, r7.x
-      mul r7.x, r7.x, l(2.000000e+001)
+      mul r7.x, r7.x, l(4.000000e+001)
       add r8.y, r11.x, l(1.100000e-003)
       mul_sat r11.z, r8.w, l(1.666667e-004)
       mad r11.w, r11.z, l(-2.000000e+000), l(3.000000e+000)
