@@ -1,7 +1,14 @@
 //SHADERS MADE BY GTA 5 BORIS JULES AI FX AND MX
 
 bool UsePaletteTexture < string UIName = "Use ENB Palette Texture"; > = { false };
-bool UseAtmos < string UIName = "Use Atmosphere (high altitude)"; > = { false };
+bool UseAtmos < string UIName = "Use Atmosphere (high altitude)"; > = { true };
+
+int Galaxy < string UIName = "Galaxy Settings"; int UIMin = 0; int UIMax = 0; > = { 0 };
+float StarIntensity < string UIName = "Star Intensity"; float UIMin = 0.0; float UIMax = 1.0; > = { 0.5 };
+float NebulaIntensity < string UIName = "Nebula Intensity"; float UIMin = 0.0; float UIMax = 1.0; > = { 0.5 };
+float3 NebulaColor1 < string UIName = "Nebula Color 1"; string UIWidget = "color"; > = { 0.1, 0.2, 0.5 };
+float3 NebulaColor2 < string UIName = "Nebula Color 2"; string UIWidget = "color"; > = { 0.5, 0.2, 0.1 };
+
 int separator0 < string UIName = " "; int UIMin = 0; int UIMax = 0; > = { 0 };
 bool UseLevels < string UIName = "Use Levels"; > = { false };
 float3 iBlack < string UIName = "  Input Black Point"; string UIWidget = "color"; > = { 0.0314, 0.0353, 0.0392 };
@@ -304,9 +311,57 @@ VS_OUTPUT_POST2 VS_Draw2(VS_INPUT_POST IN)
 	return OUT;
 }
 
+float2x2 rotate(float a) {
+    float s = sin(a);
+    float c = cos(a);
+    return float2x2(c, -s, s, c);
+}
+
+float random(float2 p) {
+    return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+}
+
+float noise(float2 p) {
+    float2 i = floor(p);
+    float2 f = frac(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return lerp(lerp(random(i), random(i + float2(1, 0)), f.x),
+                lerp(random(i + float2(0, 1)), random(i + float2(1, 1)), f.x),
+                f.y);
+}
+
+float fbm(float2 p) {
+    float f = 0.0;
+    f += 0.5000 * noise(p); p *= 2.02;
+    f += 0.2500 * noise(p); p *= 2.03;
+    f += 0.1250 * noise(p); p *= 2.01;
+    f += 0.0625 * noise(p);
+    return f / 0.9375;
+}
+
 float3 Atmosphere(float3 res, float2 uv, float3 wpos, float4 lightdir)
 {
 	float3 direction = normalize(wpos);
+    float2 p = direction.xy;
+    p /= direction.z;
+
+    p *= rotate(ENBParams01.z * 0.001);
+
+    float3 color = float3(0.0, 0.0, 0.0);
+
+    float f = fbm(p * 2.0);
+    color = lerp(NebulaColor1, NebulaColor2, f) * NebulaIntensity;
+
+    float stars = 0.0;
+    for (int i = 0; i < int(StarIntensity * 10.0); i++) {
+        float rnd = random(float2(i, i * 2.0));
+        float2 star_p = p * (2.0 + rnd * 20.0);
+        float star = 1.0 - step(0.99 + rnd * 0.009, noise(star_p));
+        stars += star;
+    }
+
+    color += stars * StarIntensity * float3(1.0, 1.0, 1.0);
+
 	float scatter = exp2((dot(lightdir.xyz, direction) - 1.0)) * 0.5;
 	float3 atmosphere = float3(0.72, 0.89, 1.4);
 	atmosphere += normalize(atmosphere) * scatter;
@@ -314,7 +369,7 @@ float3 Atmosphere(float3 res, float2 uv, float3 wpos, float4 lightdir)
 	atmosphere *= TextureDepth.SampleCmpLevelZero(Sampler5, uv, 0.9975).x;
 	float alt = (min(max(ViewInverse3.z, 700.0), 920.0) - ViewInverse3.z) / direction.z;
 	float height = saturate(-direction.z * 100.0) * lerp(0.0, 0.06, saturate(ViewInverse3.z * 0.01 - 800.0 * 0.01));
-	return lerp(res, max(res, atmosphere), smoothstep(22000.0, 20000.0, alt) * height);
+	return lerp(res, max(res, color + atmosphere), smoothstep(22000.0, 20000.0, alt) * height);
 }
 
 float4 PS_Draw(VS_OUTPUT_POST2 IN, float4 v0 : SV_Position0) : SV_Target
