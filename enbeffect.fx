@@ -308,7 +308,7 @@ float3 Atmosphere(float3 res, float2 uv, float3 wpos, float4 lightdir)
 {
 	float3 direction = normalize(wpos);
 	float scatter = exp2((dot(lightdir.xyz, direction) - 1.0)) * 0.5;
-	float3 atmosphere = float3(0.72, 0.89, 1.4);
+	float3 atmosphere = float3(1.0, 1.0, 1.0);
 	atmosphere += normalize(atmosphere) * scatter;
 	atmosphere *= lightdir.w;
 	atmosphere *= TextureDepth.SampleCmpLevelZero(Sampler5, uv, 0.9975).x;
